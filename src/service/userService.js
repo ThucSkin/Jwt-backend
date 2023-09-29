@@ -2,6 +2,63 @@ var bcrypt = require('bcryptjs');
 const db = require('../../models/index');
 var salt = bcrypt.genSaltSync(10);
 
+let handleUserLogin = async (email, password) => {
+    let userData = {};
+
+    try {
+        let isExist = await checkUserEmail(email);
+        if (!isExist) {
+            userData.errCode = 1;
+            userData.errMsg = 'User is not found';
+        } else {
+            let user = await db.User.findOne({
+                where: {
+                    email: email,
+                },
+                raw: true
+            });
+            if (!user) {
+                userData.errCode = 1;
+                userData.errMsg = 'User is not found';
+            } else {
+                let checkPassword = bcrypt.compareSync(password, user.password);
+                if (checkPassword) {
+                    userData.errCode = 0;
+                    userData.errMsg = 'ok';
+                    // Loại bỏ mật khẩu trước khi trả về thông tin người dùng
+                    delete user.password;
+                    userData.data = user;
+                } else {
+                    userData.errCode = 1;
+                    userData.errMsg = 'Wrong password';
+                }
+            }
+        }
+    } catch (error) {
+        userData.errCode = 3;
+        userData.errMsg = 'Error occurred';
+    }
+
+    return userData;
+}
+
+let checkUserEmail = async (email) => {
+    try {
+        let user = await db.User.findOne({
+            where: {
+                email: email
+            }
+        });
+        if (user) {
+            return true;
+        } else {
+            return false;
+        }
+    } catch (error) {
+        console.error(error);
+        throw error;
+    }
+}
 
 const createUser = async (data) => {
     try {
@@ -36,7 +93,6 @@ const createUser = async (data) => {
         };
     }
 };
-
 
 //Bcrypt
 let hashUserPassword = async (password) => {
@@ -85,5 +141,5 @@ module.exports = {
     createUser,
     getAllUsers,
     getUserById,
-    deleteUserById,
+    deleteUserById, handleUserLogin
 }

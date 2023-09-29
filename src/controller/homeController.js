@@ -8,14 +8,14 @@ let handleLogin = async (req, res) => {
     if (!email || !password) {
         return res.status(400).json({
             errCode: 1,
-            message: "email and password are required",
+            message: "Email and password are required",
         });
     }
     let userData = await userService.handleUserLogin(email, password);
     return res.status(200).json({
         errCode: userData.errCode,
-        message: userData.errMsg,
-        user: userData.user ? userData.user : {},
+        errMsg: userData.errMsg,
+        data: userData.data ? userData.data : {},
     });
 };
 
